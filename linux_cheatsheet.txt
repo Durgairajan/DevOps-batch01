@@ -1,0 +1,120 @@
+=====================================================
+        LINUX CHEAT SHEET - BASICS, USERS, GROUPS
+=====================================================
+
+-----------------------------------------------------
+1. BASIC COMMANDS
+-----------------------------------------------------
+pwd                        # show current directory
+ls -la                     # list files (including hidden) with details
+cd /path/to/dir            # change directory
+mkdir -p dir/sub           # create directories
+touch file.txt             # create empty file
+cp src dest                # copy (-r for directories)
+mv src dest                # move / rename
+rm file                    # delete file (rm -r for directories)
+cat file                   # display file content
+less file                  # view file page by page
+head -n 10 file            # first 10 lines
+tail -f /var/log/syslog    # follow a log in real time
+find / -name "file.txt"    # search for a file
+grep "text" file           # search text in a file
+chmod 755 file             # change permissions
+chown user:group file      # change owner and group
+df -h                      # disk usage
+du -sh dir                 # size of a directory
+ps aux                     # running processes
+top                        # live process monitor
+kill PID                   # stop a process
+
+-----------------------------------------------------
+2. USERS
+-----------------------------------------------------
+whoami                               # current user
+id username                          # UID, GID and groups of a user
+sudo useradd -m -s /bin/bash alice   # create user with home directory
+sudo adduser alice                   # interactive creation (Debian/Ubuntu)
+sudo passwd alice                    # set or change password
+sudo usermod -aG sudo alice          # add user to a group (-a is important!)
+sudo usermod -l newname alice        # rename user
+sudo usermod -L alice                # lock account
+sudo usermod -U alice                # unlock account
+sudo userdel -r alice                # delete user and home directory
+su - alice                           # switch to another user
+who                                  # who is logged in
+w                                    # who is logged in + activity
+
+-----------------------------------------------------
+3. GROUPS
+-----------------------------------------------------
+groups alice                         # groups of a user
+sudo groupadd devops                 # create a group
+sudo groupmod -n newname devops      # rename a group
+sudo groupdel devops                 # delete a group
+sudo gpasswd -a alice devops         # add user to group
+sudo gpasswd -d alice devops         # remove user from group
+getent group devops                  # show members of a group
+
+-----------------------------------------------------
+4. IMPORTANT FILES
+-----------------------------------------------------
+/etc/passwd                # user accounts
+/etc/shadow                # encrypted passwords
+/etc/group                 # groups
+/etc/gshadow               # group passwords
+
+-----------------------------------------------------
+5. USER & GROUP IDs (UID / GID)
+-----------------------------------------------------
+TYPE                   UID / GID RANGE     EXAMPLES
+root (superuser)       0                   root
+System users/groups    1 - 999             daemon, bin, www-data, sshd, mysql
+Local (normal) users   1000 - 60000        alice, bob (first user = 1000)
+nobody / nogroup       65534               nobody, nogroup
+
+Notes:
+- Older RHEL/CentOS (6 and earlier): system = 1-499, normal users start at 500.
+- System users usually have no login shell (/usr/sbin/nologin or /bin/false).
+- Ranges are defined in /etc/login.defs:
+    UID_MIN / UID_MAX           # normal users (1000 / 60000)
+    GID_MIN / GID_MAX           # normal groups (1000 / 60000)
+    SYS_UID_MIN / SYS_UID_MAX   # system users (usually 101 / 999)
+    SYS_GID_MIN / SYS_GID_MAX   # system groups (usually 101 / 999)
+
+Useful commands:
+grep -E "UID|GID" /etc/login.defs                 # show configured ranges
+id -u alice                                       # UID of a user
+id -g alice                                       # primary GID of a user
+awk -F: '$3>=1000 && $3<65534 {print $1, $3}' /etc/passwd   # list local users
+awk -F: '$3<1000 {print $1, $3}' /etc/passwd                # list system users
+awk -F: '$3>=1000 && $3<65534 {print $1, $3}' /etc/group    # list local groups
+awk -F: '$3<1000 {print $1, $3}' /etc/group                 # list system groups
+sudo useradd -r myservice                         # create a SYSTEM user (UID < 1000)
+sudo groupadd -r mysysgroup                       # create a SYSTEM group (GID < 1000)
+sudo useradd -u 1500 alice                        # create user with specific UID
+sudo groupadd -g 1500 devops                      # create group with specific GID
+
+Format of /etc/passwd line:
+alice:x:1000:1000:Alice:/home/alice:/bin/bash
+ name : pwd : UID : GID : comment : home : shell
+
+-----------------------------------------------------
+6. SUDOERS
+-----------------------------------------------------
+Main file      : /etc/sudoers
+Extra rules in : /etc/sudoers.d/
+
+ALWAYS edit with visudo (it checks syntax before saving;
+a syntax error can lock you out of sudo):
+
+sudo visudo                          # edit /etc/sudoers
+sudo visudo -f /etc/sudoers.d/alice  # edit a separate rule file
+
+Example rules:
+alice   ALL=(ALL:ALL) ALL              # full sudo rights
+%devops ALL=(ALL) NOPASSWD: ALL        # group (%), no password
+bob     ALL=(ALL) /usr/bin/systemctl   # only one command allowed
+
+Note: admin group is "sudo" on Debian/Ubuntu
+      and "wheel" on RHEL/CentOS/Fedora.
+=====================================================
